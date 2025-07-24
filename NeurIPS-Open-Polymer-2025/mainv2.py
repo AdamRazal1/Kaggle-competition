@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import torch
 
 from torch import optim
@@ -250,8 +251,6 @@ y_pred_tc = model_tc.predict(tc_features_test)
 y_pred_density = model_density.predict(density_features_test)
 y_pred_rg = model_rg.predict(rg_features_test)
 
-import numpy as np
-
 # A helper function to make the process repeatable
 def unscale_predictions(predictions, original_df, target_name, scaler):
     """Unscales predictions using the original scaler."""
@@ -282,3 +281,6 @@ print(final_preds_ffv)
 print(final_preds_tc)
 print(final_preds_density)
 print(final_preds_rg)
+
+final_df = pd.DataFrame({'id': id, 'Tg': final_preds_tg, 'FFV': final_preds_ffv, 'Tc': final_preds_tc, 'Density': final_preds_density, 'Rg': final_preds_rg})
+final_df.to_csv('submission.csv', index=False)
