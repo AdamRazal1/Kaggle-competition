@@ -209,6 +209,40 @@ scaled_density = pd.DataFrame(scaled_density, columns=feature_cols, index=densit
 scaled_rg = pd.DataFrame(scaled_rg, columns=feature_cols, index=rg.index)
 scaled_test = pd.DataFrame(scaled_test, columns=feature_cols, index=test.index)
 
+# Create one StandardScaler per target
+scaler_tg = StandardScaler()
+scaler_ffv = StandardScaler()
+scaler_tc = StandardScaler()
+scaler_density = StandardScaler()
+scaler_rg = StandardScaler()
+
+# Scale training features
+scaled_tg = scaler_tg.fit_transform(tg[feature_cols])
+scaled_ffv = scaler_ffv.fit_transform(ffv[feature_cols])
+scaled_tc = scaler_tc.fit_transform(tc[feature_cols])
+scaled_density = scaler_density.fit_transform(density[feature_cols])
+scaled_rg = scaler_rg.fit_transform(rg[feature_cols])
+
+# Scale test features using corresponding scalers
+scaled_test_tg = scaler_tg.transform(test[feature_cols])
+scaled_test_ffv = scaler_ffv.transform(test[feature_cols])
+scaled_test_tc = scaler_tc.transform(test[feature_cols])
+scaled_test_density = scaler_density.transform(test[feature_cols])
+scaled_test_rg = scaler_rg.transform(test[feature_cols])
+
+# Wrap in DataFrames to preserve structure
+scaled_tg = pd.DataFrame(scaled_tg, columns=feature_cols, index=tg.index)
+scaled_ffv = pd.DataFrame(scaled_ffv, columns=feature_cols, index=ffv.index)
+scaled_tc = pd.DataFrame(scaled_tc, columns=feature_cols, index=tc.index)
+scaled_density = pd.DataFrame(scaled_density, columns=feature_cols, index=density.index)
+scaled_rg = pd.DataFrame(scaled_rg, columns=feature_cols, index=rg.index)
+
+scaled_test_tg = pd.DataFrame(scaled_test_tg, columns=feature_cols, index=test.index)
+scaled_test_ffv = pd.DataFrame(scaled_test_ffv, columns=feature_cols, index=test.index)
+scaled_test_tc = pd.DataFrame(scaled_test_tc, columns=feature_cols, index=test.index)
+scaled_test_density = pd.DataFrame(scaled_test_density, columns=feature_cols, index=test.index)
+scaled_test_rg = pd.DataFrame(scaled_test_rg, columns=feature_cols, index=test.index)
+
 # Converting the data type of the data for training
 combined_tg = pd.concat([scaled_tg, tg['Tg']], axis=1)
 combined_ffv = pd.concat([scaled_ffv, ffv['FFV']], axis=1)
@@ -243,7 +277,7 @@ for item, name, features in [
     cumulative_importance = 0
     for idx in sorted_indices:
         cumulative_importance += importances[idx]
-        if cumulative_importance <= 0.96:
+        if cumulative_importance <= 0.95:
             features.append(item[X].columns[idx])
         else:
             break
@@ -253,11 +287,11 @@ for item, name, features in [
 
 # Using the Historical Gradient Boosting Regressor
 
-model_tg = HistGradientBoostingRegressor(learning_rate=0.1,max_iter=50,loss = 'absolute_error', random_state=42, min_samples_leaf=2,max_leaf_nodes=1000, verbose=1)
-model_ffv = HistGradientBoostingRegressor(learning_rate=0.1,max_iter=90,loss = 'absolute_error', random_state=42, min_samples_leaf=2,max_leaf_nodes=1000, verbose=1)
-model_tc = HistGradientBoostingRegressor(learning_rate=0.1,max_iter=90,loss = 'absolute_error', random_state=42, min_samples_leaf=2,max_leaf_nodes=1000, verbose=1)
-model_density = HistGradientBoostingRegressor(learning_rate=0.1,max_iter=90,loss = 'absolute_error', random_state=42, min_samples_leaf=2,max_leaf_nodes=1000, verbose=1)
-model_rg = HistGradientBoostingRegressor(learning_rate=0.1,max_iter=90,loss = 'absolute_error', random_state=42, min_samples_leaf=2,max_leaf_nodes=1000, verbose=1)
+model_tg = HistGradientBoostingRegressor(early_stopping=False,learning_rate=0.05,max_iter=500,loss = 'absolute_error', random_state=42, min_samples_leaf=3,max_leaf_nodes=100, verbose=0)
+model_ffv = HistGradientBoostingRegressor(early_stopping=False,learning_rate=0.05,max_iter=500,loss = 'absolute_error', random_state=42, min_samples_leaf=3,max_leaf_nodes=100, verbose=0)
+model_tc = HistGradientBoostingRegressor(early_stopping=False,learning_rate=0.05,max_iter=500,loss = 'absolute_error', random_state=42, min_samples_leaf=3,max_leaf_nodes=100, verbose=0)
+model_density = HistGradientBoostingRegressor(early_stopping=False,learning_rate=0.05,max_iter=500,loss = 'absolute_error', random_state=42, min_samples_leaf=3,max_leaf_nodes=100, verbose=0)
+model_rg = HistGradientBoostingRegressor(early_stopping=False,learning_rate=0.05,max_iter=500,loss = 'absolute_error', random_state=42, min_samples_leaf=3,max_leaf_nodes=100, verbose=0)
 
 for item, name, features, model in [
     (combined_tg, 'Tg', selected_features_tg, model_tg),
@@ -266,32 +300,30 @@ for item, name, features, model in [
     (combined_density, 'Density', selected_features_density, model_density),
     (combined_rg, 'Rg', selected_features_rg, model_rg)
 ]:
-    # Split into train and validation sets
-    X_train, X_val, y_train, y_val = train_test_split(
-        item[features], item[name], test_size=0.2, random_state=42
-    )
-
     # Train the model using MAE loss
-    model.fit(X_train, y_train)
+    model.fit(item[features], item[name])
 
-    # Get predictions
-    y_train_pred = model.predict(X_train)
-    y_val_pred = model.predict(X_val)
+    # print loss
+    print(f'loss for {name} : {model.score(item[features], item[name])}')
 
-    # Calculate MAE
-    train_mae = mean_absolute_error(y_train, y_train_pred)
-    val_mae = mean_absolute_error(y_val, y_val_pred)
-
-    print(f'{name} | Train MAE for {name}: {train_mae:.4f}, Val MAE for {name}: {val_mae:.4f}')
 
 # Predicting the test set for each target label df
 
-for item, name, features, model in [
-    (combined_tg, 'Tg', selected_features_tg, model_tg),
-    (combined_ffv, 'FFV', selected_features_ffv, model_ffv),
-    (combined_tc, 'Tc', selected_features_tc, model_tc),
-    (combined_density, 'Density', selected_features_density, model_density),
-    (combined_rg, 'Rg', selected_features_rg, model_rg)
+submission = {
+    'id': id,}
+
+for item, name, features, test, model in [
+    (combined_tg, 'Tg', selected_features_tg, scaled_test_tg, model_tg),
+    (combined_ffv, 'FFV', selected_features_ffv, scaled_test_ffv, model_ffv),
+    (combined_tc, 'Tc', selected_features_tc,scaled_test_tc, model_tc),
+    (combined_density, 'Density', selected_features_density,scaled_test_density, model_density),
+    (combined_rg, 'Rg', selected_features_rg, scaled_test_rg, model_rg)
 ]:
-    predictions = model.predict(scaled_test[features])
+    predictions = model.predict(test[features])
+    submission[name] = predictions
     print(f'predictions for {name} : {predictions}')
+
+submission = pd.DataFrame(submission)
+submission.to_csv('submission.csv', index=False)
+    
+
