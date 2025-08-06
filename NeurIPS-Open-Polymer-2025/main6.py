@@ -157,7 +157,7 @@ scaler_tc = StandardScaler()
 scaler_density = StandardScaler()
 scaler_rg = StandardScaler()
 
-model_tg = CatBoostRegressor(task_type='CPU',random_seed=42, verbose=0, loss_function='MAE', )
+model_tg = CatBoostRegressor(task_type='CPU',random_seed=42, verbose=0, loss_function='MAE', iterations=6000,)
 model_ffv = CatBoostRegressor(task_type='CPU',random_seed=42, verbose=0, loss_function='MAE', iterations=4000, )
 model_tc = CatBoostRegressor(task_type='CPU',random_seed=42, verbose=0, loss_function='MAE', iterations=1500)
 model_density = CatBoostRegressor(task_type='CPU',random_seed=42, verbose=0, loss_function='MAE', iterations=1200 , )
@@ -174,7 +174,6 @@ density_only = ['Tg', 'FFV', 'Tc', 'Rg']
 rg_only = ['Tg', 'FFV', 'Tc', 'Density']
 
 def training_and_evaluation(item, target, scaler, model, only):
-    model = model(min_samples_leaf=10, max_iter=200)
 
     X = item.drop([target], axis=1).copy()
     y = item[target].copy()    
@@ -202,8 +201,8 @@ def training_and_evaluation(item, target, scaler, model, only):
     print(submission[target])   
 
 
-training_and_evaluation(tg, 'Tg',  scaler_tg, HistGradientBoostingRegressor, tg_only)
-training_and_evaluation(ffv, 'FFV',  scaler_ffv, HistGradientBoostingRegressor, ffv_only)
-training_and_evaluation(tc, 'Tc',  scaler_tc, HistGradientBoostingRegressor, tc_only)
-training_and_evaluation(density, 'Density',  scaler_density, HistGradientBoostingRegressor, density_only)
-training_and_evaluation(rg, 'Rg',  scaler_rg, HistGradientBoostingRegressor, rg_only)
+training_and_evaluation(tg, 'Tg',  scaler_tg, model_tg, tg_only)
+training_and_evaluation(ffv, 'FFV',  scaler_ffv, model_ffv, ffv_only)
+training_and_evaluation(tc, 'Tc',  scaler_tc, model_tc, tc_only)
+training_and_evaluation(density, 'Density',  scaler_density, model_density, density_only)
+training_and_evaluation(rg, 'Rg',  scaler_rg, model_rg, rg_only)
