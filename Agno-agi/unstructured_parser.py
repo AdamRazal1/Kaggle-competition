@@ -200,13 +200,25 @@ def main():
         "settings": {}
     }
 
+    chunk_by_similarity_node = {
+    "name": "Chunker",
+    "subtype": "chunk_by_similarity",
+    "type": "chunk",
+    "settings": {
+        "similarity_threshold": 0.99,
+        "include_orig_elements": True,
+        "max_characters": 500
+    }
+}
+
     job_nodes = [
         vlm_partitioner_node,
         image_description_enrichment_node,
         table_description_enrichment_node,
         table_to_html_enrichment_node,
         named_entity_recognition_enrichment_node,
-        generative_ocr_enrichment_node
+        generative_ocr_enrichment_node,
+        chunk_by_similarity_node,
     ]
 
     with UnstructuredClient(api_key_auth=UNSTRUCTURED_API_KEY, server_url='https://platform.unstructuredapp.io/api/v1') as client:
