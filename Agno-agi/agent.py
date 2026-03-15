@@ -9,6 +9,8 @@ from agno.tools import tool
 from agno.skills import Skills, LocalSkills
 from agno.db.sqlite import SqliteDb
 from agno.tools.tavily import TavilyTools
+from agno.knowledge.knowledge import Knowledge
+from agno.vectordb.qdrant import Qdrant
 # Load environment variables
 dotenv.load_dotenv()
 
@@ -58,12 +60,15 @@ def generate_pdf_from_html(html: str, filename: str) -> str:
 deepseek_model = DeepSeek(id='deepseek-reasoner', api_key=deepseek_api_key)
 claude_model = Claude(id='claude-opus-4-6',api_key=anthropic_api_key)
 
-# initializing db
-
+# initializing memory
 db = SqliteDb('agno.db')
 
 # initializing web_crawler
 web_crawler = TavilyTools(api_key=tavily_api_key)
+
+# initializing knowledge base
+
+
 
 # creating agent
 agent = Agent(
