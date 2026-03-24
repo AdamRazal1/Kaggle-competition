@@ -19,6 +19,7 @@ deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
 anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
 pdf_api_key = os.getenv('PDF_ENDPOINT_API_KEY')
 tavily_api_key = os.getenv('TAVILY_API_KEY')
+qdrant_api_key = os.getenv('QDRANT_API_KEY')
 
 # generate pdf tools
 @tool
@@ -68,6 +69,13 @@ web_crawler = TavilyTools(api_key=tavily_api_key)
 
 # initializing knowledge base
 
+vector_db = Qdrant(
+    api_key= qdrant_api_key,
+    url='https://d24e0cea-2938-4359-977c-fc39ab6375b8.sa-east-1-0.aws.cloud.qdrant.io',
+    collection_name='Coomii',
+)
+
+knowledge_base = Knowledge(vector_db=vector_db)
 
 
 # creating agent
@@ -78,6 +86,7 @@ agent = Agent(
     update_memory_on_run=True,
     enable_agentic_memory=True,
     add_memories_to_context=True,
+    knowledge=knowledge_base,
     tools=[generate_pdf_from_html, web_crawler],
     skills=Skills(
         loaders=[
